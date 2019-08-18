@@ -196,11 +196,12 @@ class SokobanMap:
                 pass  # move on to the next possibility
         return successors
 
-    def bfs2(self):
+    def UCS(self):
         start = time.time()
         container = [self]
         print('container', container)
         visited = set([])
+        moves = []
 
         i = 0
         while len(container) > 0:
@@ -216,17 +217,19 @@ class SokobanMap:
                 print('Frontier max size = ', len(container))
                 #node.done(node)
                 print('The value of i: ', i)
-                return True
+                return moves
 
 
 
             # add successors
             suc = node.get_successors()
             for s in suc:
+
                 new_positions = node.apply_move(s)
                 new_state = (tuple(new_positions[0]), tuple(new_positions[1]), tuple(self.tgt_positions))
                 print('the new state', new_state)
                 if new_state not in visited:
+                    moves.append(s)
                     new_node = SokobanMap(player_position=tuple(new_positions[0]), box_positions=new_positions[1], tgt_positions=self.tgt_positions, rows=self.obstacle_map)
 
                     container.append(new_node)
@@ -328,13 +331,17 @@ def main(arglist):
     except ImportError:
         getchar = sys.stdin.read(1)
 
-    if len(arglist) != 1:
+    if len(arglist) != 2:
         print("Running this file directly launches a solution search for the input map, and outputs the solution to "
               "the output file if found")
         print("Usage: filename.py [map_file_name] [output_file]")
         return
     # Start the search here
-    initial_map.bfs2()
+    moves = initial_map.UCS()
+    f = open(arglist[1], "w+")
+    for item in moves:
+        f.write(("%s\n" % item))
+    f.close()
     return 0
 
 
