@@ -5,13 +5,7 @@ import time
 
 class SokobanMap:
     """
-    Instance of a Sokoban game map. You may use this class and its functions
-    directly or duplicate and modify it in your solution. You should avoid
-    modifying this file directly.
-
-    COMP3702 2019 Assignment 1 Support Code
-
-    Last updated by njc 11/08/19
+    By Nick Morris and njc
     """
 
     # input file symbols
@@ -66,6 +60,28 @@ class SokobanMap:
         self.parent = parent  # parent node, a NODE! not just a matrix.
         self.action = action  # The one that led to this node (useful for retracing purpose)
         self.depth = depth
+
+    def render(self):
+        """
+        Render the map's current state to terminal
+        """
+        for r in range(self.y_size):
+            line = ''
+            for c in range(self.x_size):
+                symbol = self.FREE_GLYPH
+                if self.obstacle_map[r][c] == self.OBSTACLE_SYMBOL:
+                    symbol = self.OBST_GLYPH
+                if (r, c) in self.tgt_positions:
+                    symbol = self.TGT_GLYPH
+                # box or player overwrites tgt
+                if (r, c) in self.box_positions:
+                    symbol = self.BOX_GLYPH
+                if self.player_x == c and self.player_y == r:
+                    symbol = self.PLAYER_GLYPH
+                line += symbol
+            print(line)
+
+        print('\n\n')
 
     def apply_move(self, move):
         """
@@ -167,16 +183,20 @@ class SokobanMap:
         counter = 0
         limit = 50  # if the trace is longer than 50, don't print anything, it will be a mess.
         while founding_father:
-            states.append(founding_father.state)
+            states.append(founding_father.action)
             founding_father = founding_father.parent
             counter += 1
             # Keep doing this until you reach the founding father that has a parent None (see default of init method)
         print('Number of steps to the goal = ', counter)
+        return states
+
+        '''
         if counter > limit:
             print('Too many steps to be printed')
         else:
             for i in reversed(states):  # Cause we want to print solution from initial to goal not the opposite.
                 print(i, '\n')
+        '''
 
     def get_successors(self):
         successors = []
@@ -201,13 +221,15 @@ class SokobanMap:
         container = [self]
         print('container', container)
         visited = set([])
-        moves = []
+
 
         i = 0
         while len(container) > 0:
-            #time.sleep(15)
+            print()
+            time.sleep(0)
             # expand node
             node = container.pop(0)  # FIFO container (BFS)
+            node.render()
             print('the node that was popped', node.state)
             # node = container.pop(-1) #LIFO container (DFS); Equivalent to container.pop()
 
@@ -215,22 +237,22 @@ class SokobanMap:
                 print('Time required = ', -start + time.time())
                 print('Explored states = ', len(visited))
                 print('Frontier max size = ', len(container))
-                #node.done(node)
+                moves = node.done(node)
                 print('The value of i: ', i)
                 return moves
 
-
-
             # add successors
             suc = node.get_successors()
+            print(suc)
             for s in suc:
 
                 new_positions = node.apply_move(s)
                 new_state = (tuple(new_positions[0]), tuple(new_positions[1]), tuple(self.tgt_positions))
                 print('the new state', new_state)
                 if new_state not in visited:
-                    moves.append(s)
-                    new_node = SokobanMap(player_position=tuple(new_positions[0]), box_positions=new_positions[1], tgt_positions=self.tgt_positions, rows=self.obstacle_map)
+
+                    new_node = SokobanMap(player_position=tuple(new_positions[0]), box_positions=new_positions[1],
+                                          tgt_positions=self.tgt_positions, rows=self.obstacle_map, parent=node,action=s,depth=self.depth+1,num_rows=self.y_size,row_len=self.x_size)
 
                     container.append(new_node)
                     visited.add(node.state)
@@ -339,8 +361,23 @@ def main(arglist):
     # Start the search here
     moves = initial_map.UCS()
     f = open(arglist[1], "w+")
+    moves = moves[:-1]
+    moves.reverse()
+
+    print(moves)
+    length = len(moves)
+    ct = 0
     for item in moves:
-        f.write(("%s\n" % item))
+        print(item)
+        if item is None:
+            pass
+        elif ct != length-1:
+            item = item.lower()
+            f.write("%s," % item)
+        else:
+            item = item.lower()
+            f.write("%s" % item)
+        ct += 1
     f.close()
     return 0
 
