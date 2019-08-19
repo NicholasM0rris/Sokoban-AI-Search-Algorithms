@@ -1,3 +1,7 @@
+'''
+COMP3702 - assignment one
+Search algorithm for the game Sokoban
+'''
 import copy
 import sys
 import time
@@ -5,7 +9,7 @@ import time
 
 class SokobanMap:
     """
-    By Nick Morris and njc
+   Creates an instance of the sokoban map
     """
 
     # input file symbols
@@ -38,16 +42,6 @@ class SokobanMap:
                  rows=None, depth=0, action=None, parent=None:
         """
 
-        '''
-        self.x_size = row_len
-        self.y_size = num_rows
-        self.box_positions = box_positions
-        self.tgt_positions = tgt_positions
-        self.player_position = player_position
-        self.player_x = player_position[1]
-        self.player_y = player_position[0]
-        self.obstacle_map = rows
-        '''
         self.x_size = row_len
         self.y_size = num_rows
         self.box_positions = box_positions
@@ -153,21 +147,17 @@ class SokobanMap:
                     new_box_x = new_x
                     new_box_y = new_y + 1
 
-            # update box position
-            # self.box_positions.remove((new_y, new_x))
-            # self.box_positions.append((new_box_y, new_box_x))
             new_box_positions.remove((new_y, new_x))
             new_box_positions.append((new_box_y, new_box_x))
-
-        # update player position
-        # self.player_x = new_x
-        # self.player_y = new_y
-        # self.player_position = (self.player_y, self.player_x)
 
         new_player_position = [new_y, new_x]
         return [new_player_position, new_box_positions]
 
     def is_finished(self):
+        """
+        Check if the goal state has been achieved
+        :return: True if goal state reached, False otherwise
+        """
         finished = True
         for i in self.box_positions:
             if i not in self.tgt_positions:
@@ -190,18 +180,14 @@ class SokobanMap:
         print('Number of steps to the goal = ', counter)
         return states
 
-        '''
-        if counter > limit:
-            print('Too many steps to be printed')
-        else:
-            for i in reversed(states):  # Cause we want to print solution from initial to goal not the opposite.
-                print(i, '\n')
-        '''
-
     def get_successors(self):
+        """
+        Find the possible legal moves for a given state
+        :return: list type of possible legal moves
+        """
         successors = []
         possibilities = ['D', 'L', 'U', 'R']
-
+        # Iterate over all possibilities and append legal moves to the successors list
         for apossibility in possibilities:
             try:
                 new_positions = self.apply_move(apossibility)
@@ -217,83 +203,80 @@ class SokobanMap:
         return successors
 
     def UCS(self):
-        start = time.time()
-        container = [self]
-        print('container', container)
-        visited = set([])
-
+        """
+        Find the optimal solution to the Sokoban game using a uniform cost search
+        :return: Return None if failed to solve the game, otherwise return a list of optimal moves to reach goal state
+        """
+        start = time.time()  # Start the timer
+        container = [self]  # Initialise container to current node
+        # print('container', container)
+        visited = set([])  # List of visited states
 
         i = 0
         while len(container) > 0:
-            print()
-            time.sleep(0)
+            # print()
+            # time.sleep(0)
             # expand node
-            node = container.pop(0)  # FIFO container (BFS)
-            node.render()
-            print('the node that was popped', node.state)
+            node = container.pop(0)  # FIFO container - Get the first branch
+            # node.render() #Render to terminal
+            # print('the node that was popped', node.state)
             # node = container.pop(-1) #LIFO container (DFS); Equivalent to container.pop()
 
             if node.is_finished():
                 print('Time required = ', -start + time.time())
                 print('Explored states = ', len(visited))
-                print('Frontier max size = ', len(container))
+                print('Container max size = ', len(container))
                 moves = node.done(node)
-                print('The value of i: ', i)
+                print('The value of i: ', i-1)
                 return moves
 
             # add successors
             suc = node.get_successors()
-            print(suc)
+            # print(suc)
             for s in suc:
 
                 new_positions = node.apply_move(s)
                 new_state = (tuple(new_positions[0]), tuple(new_positions[1]), tuple(self.tgt_positions))
-                print('the new state', new_state)
+                # print('the new state', new_state)
                 if new_state not in visited:
-
                     new_node = SokobanMap(player_position=tuple(new_positions[0]), box_positions=new_positions[1],
-                                          tgt_positions=self.tgt_positions, rows=self.obstacle_map, parent=node,action=s,depth=self.depth+1,num_rows=self.y_size,row_len=self.x_size)
+                                          tgt_positions=self.tgt_positions, rows=self.obstacle_map, parent=node,
+                                          action=s, depth=self.depth + 1, num_rows=self.y_size, row_len=self.x_size)
 
                     container.append(new_node)
                     visited.add(node.state)
-                    print('visited states', visited)
+                    # print('visited states', visited)
             i += 1
 
         return None
 
 
-'''
-                    new_node = Node(y_size=y, x_size=self.x_size, box_positions=self.box_positions, tgt_positions=None, player_position=None, obstacle_map=None, depth=None, action=None, parent=None):
-                    frontier.append(new_node)
-                    ft.add(player_position)
-'''
+def print_to_file(filename, moves):
+    """
+    Opens file and writes moves to it
+    :param filename: Text file
+    :param moves: Moves found by search algorithm
+    :return: None
+    """
+    f = open(filename, "w+")
+    moves = moves[:-1]
+    moves.reverse()
 
-'''
-self.x_size = row_len
-        self.y_size = num_rows
-        self.box_positions = box_positions
-        self.tgt_positions = tgt_positions
-        self.player_position = player_position
-        self.player_x = player_position[1]
-        self.player_y = player_position[0]
-        self.obstacle_map = rows
-'''
-
-'''
-class Node:
-    def __init__(self, y_size=None, x_size=None, box_positions=None, tgt_positions=None, player_position=None, obstacle_map=None, depth=None, action=None, parent=None):
-        self.y_size = y_size
-        self.x_size = x_size
-        self.action = action
-        self.parent = parent
-        self.depth = depth
-        self.box_positions = box_positions
-        self.tgt_positions = tgt_positions
-        self.player_position = player_position
-        self.player_x = player_position[1]
-        self.player_y = player_position[0]
-        self.obstacle_map = obstacle_map
-'''
+    # print(moves)
+    length = len(moves)
+    ct = 0
+    for item in moves:
+        # print(item)
+        if item is None:
+            pass
+        elif ct != length - 1:
+            item = item.lower()
+            f.write("%s," % item)
+        else:
+            item = item.lower()
+            f.write("%s" % item)
+        ct += 1
+    f.close()
 
 
 def main(arglist):
@@ -360,25 +343,8 @@ def main(arglist):
         return
     # Start the search here
     moves = initial_map.UCS()
-    f = open(arglist[1], "w+")
-    moves = moves[:-1]
-    moves.reverse()
-
-    print(moves)
-    length = len(moves)
-    ct = 0
-    for item in moves:
-        print(item)
-        if item is None:
-            pass
-        elif ct != length-1:
-            item = item.lower()
-            f.write("%s," % item)
-        else:
-            item = item.lower()
-            f.write("%s" % item)
-        ct += 1
-    f.close()
+    # Open output file and write list of moves to file
+    print_to_file(arglist[1], moves)
     return 0
 
 
