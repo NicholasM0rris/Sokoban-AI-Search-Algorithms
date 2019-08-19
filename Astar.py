@@ -5,7 +5,7 @@ Search algorithm for the game Sokoban
 import copy
 import sys
 import time
-
+import numpy as np
 
 class SokobanMap:
     """
@@ -57,24 +57,46 @@ class SokobanMap:
         self.heuristic = heuristic
 
     def manhattan_distance(self, state):
+        """
+
+        :param state: Takes in the state of the Sokoban map including box and target positions
+        :return: Returns the heuristic h(n). It is an admissible heuristic
+        """
         i = 0
+        j = 0
+        k = 0
         player_positions = state[0]
+        box_positions = state[1]
         tgt_positions = state[2]
         player_x = player_positions[1]
         player_y = player_positions[0]
-        heuristic = 999
-
+        heuristic1 = 999
+        heuristic2 = 999
+        # Shortest distance between a box and target
         for target in tgt_positions:
-            goal = abs(player_x - tgt_positions[i][1]) + abs(player_y - tgt_positions[i][0])
-            if heuristic > goal:
-                heuristic = goal
-            # print('distance', h)
-            # print('target pos: ', self.tgt_positions)
-            # print('player pos y, x: ', self.player_y, self.player_x)
+            k = 0
+            for box in box_positions:
+                goal1 = abs(box_positions[k][1] - tgt_positions[i][1]) + abs(box_positions[k][0] - tgt_positions[i][0])
+                if heuristic1 > goal1:
+                    heuristic1 = goal1
+                # print('distance', h)
+                # print('target pos: ', self.tgt_positions)
+                # print('player pos y, x: ', self.player_y, self.player_x)
+                k += 1
             i += 1
+        # Distance between Sokoban and closest box
+        for box in box_positions:
+            goal2 = abs(player_x - box_positions[j][1]) + abs(player_y - box_positions[j][0])
+            if heuristic2 > goal2:
+                heuristic2 = goal2
+            j += 1
 
+        heuristic = heuristic1 + heuristic2 - 1
         # print('heauristic', heuristic)
         return heuristic
+
+    def whos_next_astar(self, container):
+        return np.argmin([anelement.heuristic for anelement in container])
 
     def render(self):
         """
@@ -232,13 +254,17 @@ class SokobanMap:
         container = [self]  # Initialise container to current node
         # print('container', container)
         visited = set([])  # List of visited states
-        # self.heuristic = self.manhattan_distance()
+
         i = 0
         while len(container) > 0:
             # print()
             # time.sleep(0)
             # expand node
-            node = container.pop(0)  # FIFO container - Get the last branch
+            self.heuristic = self.manhattan_distance(self.state)  # Make sure heuristic is defined
+            index = self.whos_next_astar(container)
+            node = container[index]
+            del container[index]
+            #node = container.pop(0)  # FIFO container - Get the last branch
             # node.render() #Render to terminal
             # print('the node that was popped', node.state)
             # node = container.pop(-1) #LIFO container (DFS); Equivalent to container.pop()
@@ -260,10 +286,10 @@ class SokobanMap:
                 new_state = (tuple(new_positions[0]), tuple(new_positions[1]), tuple(self.tgt_positions))
                 ns_heuristic = self.manhattan_distance(new_state)
                 # print('the new state', new_state)
-                if new_state not in visited and ns_heuristic < self.manhattan_distance(self.state):
+                if new_state not in visited:
                     new_node = SokobanMap(player_position=tuple(new_positions[0]), box_positions=new_positions[1],
                                           tgt_positions=self.tgt_positions, rows=self.obstacle_map, parent=node,
-                                          action=s, depth=self.depth + 1, num_rows=self.y_size, row_len=self.x_size)
+                                          action=s, depth=self.depth + 1, num_rows=self.y_size, row_len=self.x_size, heuristic=ns_heuristic)
 
                     container.append(new_node)
                     visited.add(node.state)
