@@ -34,12 +34,50 @@ class SokobanMap:
     TGT_GLYPH = '(T)'
     PLAYER_GLYPH = '<P>'
 
-    def __init__(self, state, row_len=None, num_rows=None, box_positions=None, tgt_positions=None, player_position=None, rows=None, depth=0, action=None, parent=None):
+    def __init__(self, filename):
         """
         Build a Sokoban map instance from the given file name
         :param filename:
         """
+        f = open(filename, 'r')
 
+        rows = []
+        for line in f:
+            if len(line.strip()) > 0:
+                rows.append(list(line.strip()))
+
+        f.close()
+
+        row_len = len(rows[0])
+        for row in rows:
+            assert len(row) == row_len, "Mismatch in row length"
+
+        num_rows = len(rows)
+
+        box_positions = []
+        tgt_positions = []
+        player_position = None
+        for i in range(num_rows):
+            for j in range(row_len):
+                if rows[i][j] == self.BOX_SYMBOL:
+                    box_positions.append((i, j))
+                    rows[i][j] = self.FREE_SPACE_SYMBOL
+                elif rows[i][j] == self.TGT_SYMBOL:
+                    tgt_positions.append((i, j))
+                    rows[i][j] = self.FREE_SPACE_SYMBOL
+                elif rows[i][j] == self.PLAYER_SYMBOL:
+                    player_position = (i, j)
+                    rows[i][j] = self.FREE_SPACE_SYMBOL
+                elif rows[i][j] == self.BOX_ON_TGT_SYMBOL:
+                    box_positions.append((i, j))
+                    tgt_positions.append((i, j))
+                    rows[i][j] = self.FREE_SPACE_SYMBOL
+                elif rows[i][j] == self.PLAYER_ON_TGT_SYMBOL:
+                    player_position = (i, j)
+                    tgt_positions.append((i, j))
+                    rows[i][j] = self.FREE_SPACE_SYMBOL
+
+        assert len(box_positions) == len(tgt_positions), "Number of boxes does not match number of targets"
 
         self.x_size = row_len
         self.y_size = num_rows
@@ -49,10 +87,6 @@ class SokobanMap:
         self.player_x = player_position[1]
         self.player_y = player_position[0]
         self.obstacle_map = rows
-        self.state = state
-        self.parent = parent  # parent node, a NODE! not just a matrix.
-        self.action = action  # The one that led to this node (useful for retracing purpose)
-        self.depth = depth
 
     def apply_move(self, move):
         """
@@ -61,6 +95,8 @@ class SokobanMap:
         :return: True if move was successful, false if move could not be completed
         """
         # basic obstacle check
+        new_x = self.player_x
+        new_y = self.player_y
         if move == self.LEFT:
             if self.obstacle_map[self.player_y][self.player_x - 1] == self.OBSTACLE_SYMBOL:
                 return False
@@ -126,6 +162,8 @@ class SokobanMap:
         # update player position
         self.player_x = new_x
         self.player_y = new_y
+        #self.player_position = (new_y, new_x)
+
 
         return True
 
@@ -164,46 +202,6 @@ def main(arglist):
     Run a playable game of Sokoban using the given filename as the map file.
     :param arglist: map file name
     """
-
-    f = open(arglist[0], 'r')
-
-    rows = []
-    for line in f:
-        if len(line.strip()) > 0:
-            rows.append(list(line.strip()))
-
-    f.close()
-
-    row_len = len(rows[0])
-    for row in rows:
-        assert len(row) == row_len, "Mismatch in row length"
-
-    num_rows = len(rows)
-
-    box_positions = []
-    tgt_positions = []
-    player_position = None
-    for i in range(num_rows):
-        for j in range(row_len):
-            if rows[i][j] == SokobanMap.BOX_SYMBOL:
-                box_positions.append((i, j))
-                rows[i][j] = SokobanMap.FREE_SPACE_SYMBOL
-            elif rows[i][j] == SokobanMap.TGT_SYMBOL:
-                tgt_positions.append((i, j))
-                rows[i][j] = SokobanMap.FREE_SPACE_SYMBOL
-            elif rows[i][j] == SokobanMap.PLAYER_SYMBOL:
-                player_position = (i, j)
-                rows[i][j] = SokobanMap.FREE_SPACE_SYMBOL
-            elif rows[i][j] == SokobanMap.BOX_ON_TGT_SYMBOL:
-                box_positions.append((i, j))
-                tgt_positions.append((i, j))
-                rows[i][j] = SokobanMap.FREE_SPACE_SYMBOL
-            elif rows[i][j] == SokobanMap.PLAYER_ON_TGT_SYMBOL:
-                player_position = (i, j)
-                tgt_positions.append((i, j))
-                rows[i][j] = SokobanMap.FREE_SPACE_SYMBOL
-
-    assert len(box_positions) == len(tgt_positions), "Number of boxes does not match number of targets"
     try:
         import msvcrt
         getchar = msvcrt.getch
@@ -223,6 +221,7 @@ def main(arglist):
     steps = 0
 
     while True:
+
         char = getchar()
 
         if char == b'q':
@@ -233,7 +232,7 @@ def main(arglist):
             map_inst.render()
 
             steps = 0
-
+        #print("P x position: ", map_inst.player_position, map_inst.player_y, map_inst.player_x)
         if char == b'\xe0':
             # got arrow - read direction
             dir = getchar()
@@ -248,10 +247,11 @@ def main(arglist):
             else:
                 print("!!!error")
                 a = SokobanMap.UP
-
+            #print("P x position: ", map_inst.player_position, map_inst.player_y, map_inst.player_x)
             map_inst.apply_move(a)
             map_inst.render()
-
+            print("P x position: ", map_inst.player_position, map_inst.player_y, map_inst.player_x)
+            print("B x position: ", map_inst.box_positions)
             steps += 1
 
             if map_inst.is_finished():
