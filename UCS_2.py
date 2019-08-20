@@ -82,16 +82,16 @@ class SokobanMap:
         adjacent_walls = []
         cell = list(cell)
         # Check to the right
-        if self.obstacle_map[cell[0]][cell[1]+1] is self.OBSTACLE_SYMBOL:
+        if self.obstacle_map[cell[0]][cell[1] + 1] is self.OBSTACLE_SYMBOL:
             adjacent_walls.append((cell[0], cell[1] + 1))
         # Check to the left
-        if self.obstacle_map[cell[0]][cell[1]-1] is self.OBSTACLE_SYMBOL:
+        if self.obstacle_map[cell[0]][cell[1] - 1] is self.OBSTACLE_SYMBOL:
             adjacent_walls.append((cell[0], cell[1] - 1))
         # Check down
-        if self.obstacle_map[cell[0]+1][cell[1]] is self.OBSTACLE_SYMBOL:
+        if self.obstacle_map[cell[0] + 1][cell[1]] is self.OBSTACLE_SYMBOL:
             adjacent_walls.append((cell[0] + 1, cell[1]))
         # Check up
-        if self.obstacle_map[cell[0]-1][cell[1]] is self.OBSTACLE_SYMBOL:
+        if self.obstacle_map[cell[0] - 1][cell[1]] is self.OBSTACLE_SYMBOL:
             adjacent_walls.append((cell[0] - 1, cell[1]))
         # print(adjacent_walls)
         return adjacent_walls
@@ -101,21 +101,62 @@ class SokobanMap:
         height = self.y_size
         deadlocks = []
         adjacent_walls = []
+        corners = []
         # iterate through map
         for x in range(width):
             for y in range(height):
                 cell = (y, x)
                 # print(self.walls)
                 # If the cell is not a target or wall consider it a possible deadlock
-                if cell not in tuple(self.tgt_positions) and self.obstacle_map[y][x] != self.OBSTACLE_SYMBOL:
+                if cell not in tuple(self.tgt_positions) and self.obstacle_map[y][x] is not self.OBSTACLE_SYMBOL:
                     adjacent_walls = self.adjacent_walls(cell)
-                    print(adjacent_walls)
+                    # print(adjacent_walls)
                 # If a cell is touching three walls, or two cells with different x and y coords (not just above and below or left and right) then it's a corner
-                if len(adjacent_walls) >= 3 or (len(adjacent_walls) == 2 and adjacent_walls[0][0] != adjacent_walls[1][0] and adjacent_walls[1][0] != adjacent_walls[1][1]):
-                    deadlocks.append(cell)
+                if len(adjacent_walls) >= 3 or (
+                        len(adjacent_walls) == 2 and adjacent_walls[0][0] != adjacent_walls[1][0] and adjacent_walls[1][
+                    0] != adjacent_walls[1][1] and self.obstacle_map[cell[0]][cell[1]] is not self.OBSTACLE_SYMBOL):
+                    corners.append(cell)
+        edges = []
+        # Iterate through the corners to find edges
+        for i in range(2):
+            j = i ^ 1
+            for a in range(len(corners)):
+                for b in range(a, len(corners)):
+                    cell1 = corners[a]
+                    cell2 = corners[b]
+                    # If they share same x or y coord, find edge between them by iterating the opposite coord
+                    if cell1 != cell2 and cell1[i] == cell2[i]:
+                        length = abs(cell2[j] - cell1[j])
+                        edge_cells = []
+                        # iterate along the edge until reaching the other corner
+                        for d in range(1, length):
 
+                            checked = list(cell1)
+                            # Move to next cell (opposite to corner coordinate)
+                            checked[j] += d
+                            # get adjacent walls perpendicular to the edge (if two corners share same x, check left and right cells)
+                            wall1 = copy.copy(checked)
+                            wall1[i] += 1
+                            wall2 = copy.copy(checked)
+                            wall2[i] -= 1
+                            # print('wall1: ', wall1)
+                            # print('wall2', wall2)
+                            # print('checked: ', checked)
 
+                            # If the edge has a target, or has a hole in it, then they are not dead locks
+                            if checked in self.tgt_positions or self.obstacle_map[wall1[0]][wall1[1]] \
+                                    is not self.OBSTACLE_SYMBOL and self.obstacle_map[wall2[0]][
+                                wall2[1]] is not self.OBSTACLE_SYMBOL:
+                                edge_cells = []
+                                # print('neigh')
+                                # print(self.obstacle_map[wall2[0]][wall2[1]])
+                                break
+                            else:
+                                edge_cells.append(tuple(checked))
 
+                        edges.extend(edge_cells)
+        deadlocks.extend(edges)
+        deadlocks.extend(corners)
         return deadlocks
 
     def apply_move(self, move):
