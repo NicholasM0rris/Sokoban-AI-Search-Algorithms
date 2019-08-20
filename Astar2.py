@@ -7,6 +7,7 @@ import sys
 import time
 import numpy as np
 
+
 class SokobanMap:
     """
    Creates an instance of the sokoban map
@@ -56,47 +57,43 @@ class SokobanMap:
         self.depth = depth
         self.heuristic = heuristic
 
-    def manhattan_distance(self, state):
+    def manhattan_distance(self, state, depth):
         """
 
+        :param depth:
         :param state: Takes in the state of the Sokoban map including box and target positions
         :return: Returns the heuristic h(n). It is an admissible heuristic
         """
-        i = 0
-        j = 0
+        # i = 0
+        # j = 0
         k = 0
-        player_positions = state[0]
-        box_positions = state[1]
-        tgt_positions = state[2]
-        player_x = player_positions[1]
-        player_y = player_positions[0]
-        heuristic1 = 999
-        heuristic2 = 999
-        total = 0
+
+        box_positions = list(state[1])
+        tgt_positions = list(state[2])
+
+        #  heuristic1 = 999
+        h = 0
         # Shortest distance between a box and target
-        for target in tgt_positions:
+        while box_positions:
+            # iterate through all targets
+            # print('tgts:', tgt_positions)
+            # print('boxs', box_positions)
             k = 0
+            heuristic1 = 999
             for box in box_positions:
-                goal1 = abs(box_positions[k][1] - tgt_positions[i][1]) + abs(box_positions[k][0] - tgt_positions[i][0])
+                goal1 = abs(box_positions[k][1] - tgt_positions[0][1]) + abs(box_positions[k][0] - tgt_positions[0][0])
                 if heuristic1 > goal1:
                     heuristic1 = goal1
-                # print('distance', h)
-                # print('target pos: ', self.tgt_positions)
-                # print('player pos y, x: ', self.player_y, self.player_x)
+                    del tgt_positions[0]
+                    del box_positions[k]
                 k += 1
-            i += 1
-            total += heuristic1
-            print(total)
-        # Distance between Sokoban and closest box
-        for box in box_positions:
-            goal2 = abs(player_x - box_positions[j][1]) + abs(player_y - box_positions[j][0])
-            if heuristic2 > goal2:
-                heuristic2 = goal2
-            j += 1
-
-        heuristic = heuristic1 + heuristic2 - 1
-        # print('heauristic', heuristic)
-        return total
+            h += heuristic1
+        # h = h/10
+        # print('h', h)
+        f = h + depth
+        # print('depth', depth)
+        # print(f)
+        return f
 
     def whos_next_astar(self, container):
         return np.argmin([anelement.heuristic for anelement in container])
@@ -223,7 +220,7 @@ class SokobanMap:
             founding_father = founding_father.parent
             counter += 1
             # Keep doing this until you reach the founding father that has a parent None (see default of init method)
-        print('Number of steps to the goal = ', counter)
+        print('Number of steps to the goal = ', counter - 1)
         return states
 
     def get_successors(self):
@@ -263,11 +260,11 @@ class SokobanMap:
             # print()
             # time.sleep(0)
             # expand node
-            self.heuristic = self.manhattan_distance(self.state)  # Make sure heuristic is defined
+            self.heuristic = self.manhattan_distance(self.state, self.depth)  # Make sure heuristic is defined
             index = self.whos_next_astar(container)
             node = container[index]
             del container[index]
-            #node = container.pop(0)  # FIFO container - Get the last branch
+            # node = container.pop(0)  # FIFO container - Get the last branch
             # node.render() #Render to terminal
             # print('the node that was popped', node.state)
             # node = container.pop(-1) #LIFO container (DFS); Equivalent to container.pop()
@@ -281,18 +278,20 @@ class SokobanMap:
                 return moves
 
             # add successors
+
             suc = node.get_successors()
             # print(suc)
             for s in suc:
 
                 new_positions = node.apply_move(s)
                 new_state = (tuple(new_positions[0]), tuple(new_positions[1]), tuple(self.tgt_positions))
-                ns_heuristic = self.manhattan_distance(new_state)
+                ns_heuristic = self.manhattan_distance(new_state, node.depth)
                 # print('the new state', new_state)
                 if new_state not in visited:
                     new_node = SokobanMap(player_position=tuple(new_positions[0]), box_positions=new_positions[1],
                                           tgt_positions=self.tgt_positions, rows=self.obstacle_map, parent=node,
-                                          action=s, depth=self.depth + 1, num_rows=self.y_size, row_len=self.x_size, heuristic=ns_heuristic)
+                                          action=s, depth=node.depth + 1, num_rows=self.y_size, row_len=self.x_size,
+                                          heuristic=ns_heuristic)
 
                     container.append(new_node)
                     visited.add(node.state)
