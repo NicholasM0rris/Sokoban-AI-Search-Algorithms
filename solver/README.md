@@ -24,4 +24,4 @@ path_visualiser.py testcases/1box_m1.txt output.txt
 
 Example output of path_visualiser.py:
 
-![](back_ups/gif.gif)
+![](backups/gif.gif)
