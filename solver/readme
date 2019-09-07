@@ -13,3 +13,15 @@ Takes an input file as a map and an output file as a solution of moves and deter
 
 solver.py
 Given an input file as a map, and an output file, it will write the solution to solve the map to the output file, and if the output file does not exist it will create it. It uses an A* search algorithm with deadlock detection to find the optimal solution to a game of sokoban.
+
+
+e.g 
+To create a solution file:
+solver.py testcases/1box_m1.txt output.txt
+
+Display solution file:
+path_visualiser.py testcases/1box_m1.txt output.txt
+
+Example output of path_visualiser.py:
+
+![](old_versions/gif.gif)
