@@ -22,5 +22,5 @@ soon as every box is in a target position.
 Search Algorithms
 This project explores different search algorithms to find the optimal solution to solving the game Sokoban
 
-Everything needed to run the project is in the solver folder, or the a1-COMP3702-44373388-45948457 zip used for submission.
+Everything needed to run the project is in the solver folder, or the a1-COMP3702-44373388-45948457 zip used for submission. The text files found in the testcases folder are examples of sokoban maps and can be used as input files to the solver.
 
